@@ -1,0 +1,367 @@
+//TEAM MEMBERS
+//Alec Ferchen ID:aferchen
+//Benji Lepe ID: bbl@iastate.edu
+
+B main
+
+main:
+    //Array is in X19 saved register
+    //Size is in X20 saved register
+    //DUMP
+    SUBI SP, SP, #32
+    STUR X19, [SP, #0]
+    STUR X20, [SP, #8]
+
+    ADD X19, SP, XZR
+    ADDI X20, XZR, #15   // X20 is size of array start with 15
+
+    ADD X0, X19, XZR     // X0 is address
+    ADD X1, X20, XZR     // X1 is size
+    BL fill     //Fill er' up
+
+
+    //DUMP   NEXT 10 LINES FOR TESTING SWAP METHOD
+    //LDUR X2, [X0, #0]
+    //LDUR X3, [X1, #0] 
+    //PRNT X2
+    //PRNT X3 
+    //BL swap
+    //LDUR X2, [X0, #0]
+    //LDUR X3, [X1, #0]
+    //PRNT X2
+    //PRNT X3
+    //DUMP
+
+
+
+    //ADD X0, X19, XZR
+    //ADD X1, X20, XZR
+    //ADDI X2, XZR, #0
+    //BL heapify        //HEAPIFY TESTING
+
+
+    ADD X0, X19, XZR     // X0 is address
+    ADD X1, X20, XZR     // X1 is size
+    BL heapsort
+    //PRNL
+    //DUMP
+    //PRNL
+
+    ADD X0, X19, XZR    //X0 is size
+    ADD X1, X20, XZR    //X1 is address
+    BL print_array
+    //DUMP
+    
+
+    ADDI SP, SP, #16
+    LDUR X19, [SP, #0]
+    LDUR X20, [SP, #8]
+    //HALT
+    B end
+
+
+
+print_array:
+    SUBI SP, SP, #32
+    STUR X30, [SP, #0]
+    STUR X19, [SP, #8]
+    STUR X20, [SP, #16]     
+    STUR X12, [SP, #24]
+    ADD X10, XZR, XZR       // X10 is i starts at 0
+
+print_loop:
+    SUBS X11, X10, X20
+    B.GE print_done         // i >= s
+
+    LSL X12, X10, #3        // 8bit convert
+    ADD X12, X19, X12       // X12 is address of a[i]
+
+    LDUR X13, [X12, #0]     // Load a[i] into X13
+    PRNT X13                // Print the value
+
+    ADDI X10, X10, #1       // i++
+    B print_loop
+
+print_done:
+    ADD X13, XZR, XZR
+    ADDI X10, XZR, #0
+    LDUR X30, [SP, #0]
+    LDUR X19, [SP, #8]
+    LDUR X20, [SP, #16]
+    LDUR X12, [SP, #24]
+    ADDI SP, SP, #32
+    BR LR
+
+
+fill:
+    // Save registers
+    SUBI SP, SP, #64
+    STUR X30, [SP, #0]
+    STUR X19, [SP, #8]
+    STUR X20, [SP, #16] 
+    STUR X10, [SP, #24]   
+    STUR X11, [SP, #32]    
+    STUR X12, [SP, #40]
+    STUR X13, [SP, #48]
+    STUR X14, [SP, #56]
+
+    ADD X19, X0, XZR       // X19 is address of array
+    ADD X20, X1, XZR       // X20 is size
+    SUBS X10, XZR, XZR     // X10 is i so starts 0
+
+fill_loop:
+    LSR X11, X20, #1       // X11 is s / 2
+    SUBS X12, X10, X11
+    B.GE fill_done         // i >= s/2
+
+    // left side index
+    ADDI X13, X20, #1
+    LSR X13, X13, #1
+    SUB X13, X13, X10
+    SUBI X13, X13, #1       // X13 is ((s+1)/2) - (i+1)
+
+    // right side index
+    ADDI X14, X20, #1
+    LSR X14, X14, #1
+    ADD X14, X14, X10      // X14 is ((s+1)/2) + i
+
+    LSL X13, X13, #3       // 8bit convert
+    ADD X13, X19, X13      // X13 is address of a[((s+1)/2) - (i+1)]
+
+    LSL X14, X14, #3       // 8bit convert
+    ADD X14, X19, X14      // X14 is address of a[((s+1)/2) + i]
+
+    ADD X16, X10, X10
+    STUR X16, [X13, #0]    // even number a[((s+1)/2) - (i+1)]
+    
+    //PRNT X16 WILL PRINT EVEN NUMS ONLY
+
+    ADDI X16, X16, #1
+    STUR X16, [X14, #0]    // odd a[((s+1)/2) + i]
+
+    //PRNT X16  WILL PRINT ODD NUMS ONLY
+
+    ADDI X10, X10, #1      // i++
+
+    B fill_loop
+
+fill_done:
+    // s is odd
+    ANDI X11, X20, #1
+    CBZ X11, fill_end 
+
+    SUBI X12, X20, #1
+    STUR X12, [X19, #0]
+
+fill_end:
+    // Restore registers before returning
+    LDUR X30, [SP, #0]
+    LDUR X19, [SP, #8]
+    LDUR X20, [SP, #16]
+    LDUR X10, [SP, #24]
+    LDUR X11, [SP, #32]
+    LDUR X12, [SP, #40]
+    LDUR X13, [SP, #48]
+    LDUR X14, [SP, #56]
+    ADDI SP, SP, #64
+    BR LR
+
+swap:
+    // Save registers
+    SUBI SP, SP, #32
+    STUR X30, [SP, #0]
+    STUR X9,  [SP, #8]
+    STUR X10, [SP, #16]
+    STUR X12, [SP, #24]
+
+    ADD X9, X0, XZR         // a
+    ADD X10, X1, XZR        // b
+
+    LDUR X11, [X9, #0]      // X11 = a
+    LDUR X12, [X10, #0]     // X12 = b
+
+    // Swap values
+    STUR X12, [X9, #0]
+    STUR X11, [X10, #0]
+
+    LDUR X30, [SP, #0]
+    LDUR X9,  [SP, #8]
+    LDUR X10, [SP, #16]
+    LDUR X12, [SP, #24]
+    ADDI SP, SP, #32
+    BR LR
+
+
+
+percolate_down:
+    // Save registers
+    SUBI SP, SP, #72
+    STUR X30, [SP, #0]
+    STUR X19, [SP, #8]
+    STUR X20, [SP, #16]
+    STUR X21, [SP, #24]
+    STUR X11, [SP, #32]
+    STUR X10, [SP, #40]
+    STUR X13, [SP, #48]
+    STUR X12, [SP, #56]
+    STUR X14, [SP, #64]
+
+    // Load function parameters
+    ADD X19, X0, XZR      // X19 gets address
+    ADD X20, X1, XZR      // X20 gets size
+    ADD X21, X2, XZR      // X21 gets i
+
+percolate_loop:
+    LSL X10, X21, #1
+    ADDI X10, X10, #1     // X10 = (2 * i) + 1
+
+    SUBS X11, X10, X20
+    B.GE percolate_done
+
+    ADDI X12, X10, #1     // X12 = child + 1
+    SUBS X13, X12, X20
+    B.GE compare_parent   // child+1 >= s
+
+    LSL X14, X10, #3      // 8bit convert
+    ADD X14, X19, X14     // address a[child]
+    LDUR X15, [X14, #0]   // X15 gets a[child], have to load
+
+    LSL X16, X12, #3      // 8bit convert
+    ADD X16, X19, X16     // address a[child+1]
+    LDUR X17, [X16, #0]   // X17 gets a[child + 1], have to load
+
+
+    // a[child] - a[child+1]
+    SUBS XZR, X15, X17
+    B.GE compare_parent   // pick bigger child
+    ADDI X10, X10, #1
+
+compare_parent:
+    LSL X14, X21, #3      // 8bit convert
+    ADD X14, X19, X14     // address of a[i]
+    LDUR X15, [X14, #0]   // X15 gets a[i], have to load
+
+    LSL X16, X10, #3      // 8bit convert
+    ADD X16, X19, X16     // address of a[child]
+    LDUR X17, [X16, #0]   // X17 gets a[child], have to load
+
+    // Compare a[i] with a[child]
+    SUBS XZR, X15, X17
+    B.GE percolate_done   // a[i] >= a[child] then stop percolating
+
+    // Call swap(a + i, a + child)
+    ADD X0, X14, XZR      // X0 as address a + i
+    ADD X1, X16, XZR      // X1 as address a + child
+    BL swap
+
+    // i = child and back to top of loop
+    ADD X21, X10, XZR
+    B percolate_loop
+
+percolate_done:
+    // Restore registers before returning
+    ADDI X15, XZR, #0
+    LDUR X30, [SP, #0]
+    LDUR X19, [SP, #8]
+    LDUR X20, [SP, #16]
+    LDUR X21, [SP, #24]
+    LDUR X11, [SP, #32]
+    LDUR X10, [SP, #40]
+    LDUR X13, [SP, #48]
+    LDUR X12, [SP, #56]
+    LDUR X14, [SP, #64]
+    ADDI SP, SP, #72
+    BR LR
+
+
+heapify:
+    // Prologue: Save registers
+    SUBI SP, SP, #32
+    STUR X30, [SP, #0]
+    STUR X19, [SP, #8]
+    STUR X20, [SP, #16]
+    STUR X21, [SP, #24]
+
+    ADD X19, X0, XZR      // X19 = array base
+    ADD X20, X1, XZR      // X20 = array size
+
+    LSR X21, X20, #1      // X21 = s / 2
+    SUBI X21, X21, #1     // X21 = (s / 2) - 1
+
+heapify_loop:
+    SUBS XZR, X21, XZR
+    B.LT heapify_done      // i < 0
+
+    // Call percolate_down(a, s, i)
+    ADD X0, X19, XZR      // X0 as array address
+    ADD X1, X20, XZR      // X1 as size
+    ADD X2, X21, XZR      // X2 as i
+    BL percolate_down     // Call percolate_down
+
+    SUBI X21, X21, #1     // i--
+    B heapify_loop        // back up
+
+heapify_done:
+    // Restore registers before returning
+    LDUR X30, [SP, #0]
+    LDUR X19, [SP, #8]
+    LDUR X20, [SP, #16]
+    LDUR X21, [SP, #24]
+    ADDI SP, SP, #32
+    BR LR
+
+heapsort:
+    SUBI SP, SP, #32
+    STUR X30, [SP, #0]
+    STUR X19, [SP, #8]
+    STUR X20, [SP, #16]
+    STUR X21, [SP, #24]
+
+    ADD X23, X20, XZR       // X23 as size as a temp size
+    ADD X0, X19, XZR        // X0 as address of array
+    ADD X1, X20, XZR        // X1 as size
+
+    BL heapify              // build heaap
+
+heap_sort_loop:
+    SUBIS X22, X23, #0  //I think this is right?
+    B.LE heap_sort_done
+
+   ADD X0, X19, XZR      // address of a[0]
+
+    SUBI X1, X23, #1
+    LSL X1, X1, #3
+    ADD X1, X19, X1
+
+    //LDUR X10, [X0, #0]  // value at X0
+    //LDUR X11, [X1, #0]  // value at X1
+    //PRNT X10
+    //PRNT X11
+    BL swap
+
+    // percolate_down(a, X23 - i, 0)
+    ADD X0, X19, XZR        // Address of array as X0
+    SUBI X1, X23, #1        // X23 as X1
+    ADDI X2, XZR, #0        // 0 as X2
+    BL percolate_down
+    //ADD X0, X19, XZR
+    //ADD X1, X23, XZR
+    //BL print_array
+
+    // X23 -= 1
+    SUBI X23, X23, #1
+
+    // i++ and back to loop
+    ADDI X21, X21, #1
+    B heap_sort_loop
+
+heap_sort_done:
+    // Restore registers before returning
+    LDUR X30, [SP, #0]
+    LDUR X19, [SP, #8]
+    LDUR X20, [SP, #16]
+    LDUR X21, [SP, #24]
+    ADDI SP, SP, #32
+    BR LR 
+
+end:
